@@ -14,3 +14,8 @@ Arch
 sudo pacman -Syu --noconfirm bc bison base-devel ccache curl flex g++ git git-lfs gnupg gperf imagemagick ncurses lib32-ncurses lib32-readline lib32-zlib lz4 lib32-lz4 pngcrush rsync schedtool squashfs-tools xsltproc zip zlib device-tree-compiler python
 ```
 
+Fedora
+```bash
+sudo dnf install -y bc bison make ccache curl flex gcc-c++ git git-lfs gnupg gperf ImageMagick ncurses-devel readline-devel zlib-devel lz4 lz4-devel pngcrush rsync schedtool squashfs-tools libxslt zip zlib device-tree-compiler python3
+```
+
