@@ -11,8 +11,8 @@ LOG_FILE="log.txt"
 TC_DIR="$HOME/prebuilts/clang/host/linux-x86/llvm-21"
 export PATH="$TC_DIR/bin:$PATH"
 
-TG_TOKEN="YOUR_BOT_TOKEN"       
-TG_CHAT_ID="YOUR_CHAT_ID"     
+TG_TOKEN="YOUR_BOT_TOKEN"
+TG_CHAT_ID="YOUR_CHAT_ID"
 
 PROJECT_ID="Aether | Prjkt"
 PROJECT_HOST="Aether | Prjkt"
@@ -91,7 +91,7 @@ function pack_anykernel() {
     if [ ! -d "$ANYKERNEL_DIR" ]; then
         git clone --depth 1 "$ANYKERNEL_REPO" "$ANYKERNEL_DIR"
     fi
-    cp out/arch/arm64/boot/Image "$ANYKERNEL_DIR/"
+    cp out/arch/arm64/boot/Image.gz "$ANYKERNEL_DIR/"
     pushd "$ANYKERNEL_DIR" > /dev/null
     zip -r9 "../$ZIP_NAME" . -x .git README.md *placeholder
     popd > /dev/null
@@ -101,14 +101,13 @@ function pack_anykernel() {
 UPTIME=$(uptime -p)
 START_TIME_FMT=$(date +"%d %B %Y, %T %Z")
 
-send_tg "🚀 *New Build Initialized!*
+send_tg "🚀 *New Build Initialized!*  
+A new kernel compilation process has been started.  
 
-A new kernel compilation process has been started.
-
-*Project:* \`$PROJECT_ID\`
-*Device:* \`$DEVICE_NAME\`
-*Host:* \`$PROJECT_HOST\`
-*Uptime:* \`$UPTIME\`
+*Project:* \`$PROJECT_ID\`  
+*Device:* \`$DEVICE_NAME\`  
+*Host:* \`$PROJECT_HOST\`  
+*Uptime:* \`$UPTIME\`  
 *Started at:* \`$START_TIME_FMT\`"
 
 $DO_CLEAN && { rm -rf out/; echo "Cleaned output directory."; }
@@ -116,18 +115,19 @@ $DO_CLEAN && { rm -rf out/; echo "Cleaned output directory."; }
 mkdir -p out
 echo "Generating config..."
 m gki_defconfig
-scripts/config --file out/.config --set-str LOCALVERSION "-${LOCALVERSION_NAME}"
-scripts/config --file out/.config -d LTO_NONE -d LTO_CLANG_THIN -e LTO_CLANG_FULL
+./scripts/config --file out/.config --set-str LOCALVERSION "-${LOCALVERSION_NAME}"
+./scripts/config --file out/.config -d LTO_NONE -d LTO_CLANG_THIN -e LTO_CLANG_FULL
+
 echo "Full LTO enabled by default."
 
-$NO_LTO && { scripts/config --file out/.config -d LTO_CLANG_FULL -e LTO_NONE; echo "Disabled LTO!"; }
+$NO_LTO && { ./scripts/config --file out/.config -d LTO_CLANG_FULL -e LTO_NONE; echo "Disabled LTO!"; }
 $ONLY_CONFIG && exit
 
-echo "Building kernel Image..."
-m Image
+echo "Building kernel Image.gz..."
+m Image.gz
 
-if [ -f "out/arch/arm64/boot/Image" ]; then
-    echo "Image built successfully."
+if [ -f "out/arch/arm64/boot/Image.gz" ]; then
+    echo "Image.gz built successfully."
     pack_anykernel
     if [ -f "$ZIP_NAME" ]; then
         FILE_SIZE=$(du -h "$ZIP_NAME" | cut -f1)
@@ -135,18 +135,17 @@ if [ -f "out/arch/arm64/boot/Image" ]; then
         SHA256_HASH=$(sha256sum "$ZIP_NAME" | cut -d ' ' -f1)
         COMPILATION_TIME=$(format_time $SECONDS)
 
-        send_tg "🎉 *BUILD COMPLETE: SUCCESS!* 🎉
+        send_tg "🎉 *BUILD COMPLETE: SUCCESS!* 🎉  
+Your kernel has been compiled successfully.  
 
-Your kernel has been compiled successfully.
+*Project:* \`$PROJECT_ID\`  
+*Device:* \`$DEVICE_NAME\`  
+*Compilation Time:* \`$COMPILATION_TIME\`  
 
-*Project:* \`$PROJECT_ID\`
-*Device:* \`$DEVICE_NAME\`
-*Compilation Time:* \`$COMPILATION_TIME\`
-
-*File Name:* \`$ZIP_NAME\`
-*File Size:* \`$FILE_SIZE\`
-*MD5 Checksum:* \`$MD5_HASH\`
-*SHA256 Checksum:* \`$SHA256_HASH\`
+*File Name:* \`$ZIP_NAME\`  
+*File Size:* \`$FILE_SIZE\`  
+*MD5 Checksum:* \`$MD5_HASH\`  
+*SHA256 Checksum:* \`$SHA256_HASH\`  
 
 ---
 New kernel has arrived!"
@@ -157,16 +156,13 @@ New kernel has arrived!"
     fi
 else
     COMPILATION_TIME=$(format_time $SECONDS)
-    send_tg "❌ *BUILD FAILED!*
-
-The kernel compilation process failed. Please check the attached log.
-
-*Project:* \`$PROJECT_ID\`
-*Device:* \`$DEVICE_NAME\`
-*Host:* \`$PROJECT_HOST\`
+    send_tg "❌ *BUILD FAILED!*  
+The kernel compilation process failed. Please check the attached log.  
+*Project:* \`$PROJECT_ID\`  
+*Device:* \`$DEVICE_NAME\`  
+*Host:* \`$PROJECT_HOST\`  
 *Compilation Time:* \`$COMPILATION_TIME\`"
     tg_upload "$LOG_FILE"
     exit 1
 fi
-
 echo "Completed in $(format_time $SECONDS)"
